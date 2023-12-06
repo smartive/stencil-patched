@@ -1,0 +1,16 @@
+name: Fork Sync
+
+on:
+  schedule:
+    - cron: '0 7 * * 1,4'
+    # scheduled at 07:00 every Monday and Thursday
+  workflow_dispatch: # click the button on Github repo!
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tgymnich/fork-sync@v1.9.0
+        with:
+          base: main
+          head: main
