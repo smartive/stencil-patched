@@ -1,0 +1,8 @@
+{
+  "name": "@stencil/core/compiler",
+  "version": "4.8.1-dev.1701854869.b1cf522",
+  "description": "Stencil Compiler.",
+  "main": "./stencil.js",
+  "types": "./stencil.d.ts",
+  "private": true
+}
