@@ -57,3 +57,7 @@ jobs:
     uses: ./.github/workflows/test-unit.yml
     with:
       build_name: stencil-core
+
+  fork_sync:
+    name: Fork Sync
+    uses: ./.github/workflows/fork-sync.yml
