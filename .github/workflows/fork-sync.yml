@@ -2,8 +2,10 @@ name: Fork Sync
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # every 30 minutes
-  workflow_dispatch: # on button click
+    - cron: '0 7 * * 1,4'
+    # scheduled at 07:00 every Monday and Thursday
+
+  workflow_dispatch: # click the button on Github repo!
 
 jobs:
   sync:
