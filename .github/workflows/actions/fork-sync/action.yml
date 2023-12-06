@@ -13,7 +13,7 @@ jobs:
       - uses: tgymnich/fork-sync@v1.8
         with:
           owner: smartive
-          base: master
-          head: master
+          base: main
+          head: main
           repo: $ionic-team/stencil
           pr_title: Fork sync with upstream
