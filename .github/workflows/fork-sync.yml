@@ -2,7 +2,7 @@ name: Fork Sync
 
 on:
   schedule:
-    - cron: '0 7 * * 1,4'
+    - cron: '0 0 * * *'
     # scheduled at 07:00 every Monday and Thursday
   workflow_dispatch: # click the button on Github repo!
 
@@ -10,7 +10,33 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: tgymnich/fork-sync@v1.9.0
-        with:
-          base: main
-          head: main
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Fetch upstream changes
+        run: |
+          git remote add upstream https://github.com/ionic-team/stencil.git
+          git fetch upstream
+
+      - name: Check for new release
+        id: check_release
+        run: |
+          NEW_RELEASE=$(git tag -l | sort -V | tail -n 1)
+          echo "Latest release: $NEW_RELEASE"
+          echo "::set-output name=release_tag::$NEW_RELEASE"
+
+      - name: Create Pull Request
+        if: steps.check_release.outputs.release_tag != ''
+        run: |
+          # Set up your branch for changes
+          git checkout -b fork-sync
+
+          # Make changes, update files, etc. based on the new release
+
+          # Commit and push changes to your forked repository
+          git add .
+          git commit -m "Sync with upstream release ${{ steps.check_release.outputs.release_tag }}"
+          git push origin sync-branch
+
+          # Create Pull Request
+          gh pr create --base main --head sync-branch --title "Sync with upstream release ${{ steps.check_release.outputs.release_tag }}" --body "Syncing with the latest upstream release."
