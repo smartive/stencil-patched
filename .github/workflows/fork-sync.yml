@@ -24,6 +24,8 @@ jobs:
         run: |
           git remote add upstream https://github.com/ionic-team/stencil.git
           git fetch upstream
+          git checkout main
+          git merge upstream/main
 
       - name: Check for new release in upstream
         id: check_upstream_release
