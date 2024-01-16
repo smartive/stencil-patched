@@ -18,24 +18,17 @@ jobs:
         run: |
           FORK_RELEASE=$(git ls-remote --tags https://github.com/smartive/stencil-patched.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           echo "Latest fork release: $FORK_RELEASE"
-          echo "fork_release_tag=$FORK_RELEASE" >> $GITHUB_OUTPUT
-
-      - name: Fetch upstream changes
-        run: |
-          git remote add upstream https://github.com/ionic-team/stencil.git
-          git fetch upstream
-          git checkout main
-          git merge upstream/main
+          echo "FORK_RELEASE=$FORK_RELEASE" >> $GITHUB_ENV
 
       - name: Check for new release in upstream
         id: check_upstream_release
         run: |
           UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           echo "Latest upstream release: $UPSTREAM_RELEASE"
-          echo "upstream_release_tag=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
+          echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_ENV
 
       - name: Create Pull Request
-        if: steps.check_fork_release.outputs.fork_release_tag != steps.check_upstream_release.outputs.upstream_release_tag
+        if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
         run: |
           #Set up Git
           git config user.name 'CI-Robot'
@@ -46,8 +39,8 @@ jobs:
 
           # Commit and push changes to your forked repository
           git add .
-          git commit -m "chore: update repo with upstream release ${{ steps.check_upstream_release.outputs.upstream_release_tag }}"
+          git commit -m "chore: update repo with upstream release ${{ steps.check_upstream_release.outputs.UPSTREAM_RELEASE }}"
           git push origin update-repo
 
           # Create Pull Request
-          gh pr create --base main --head update-repo --title "chore: update repo with upstream release ${{ steps.check_upstream_release.outputs.upstream_release_tag }}" --body "update repo with the latest upstream release."
+          gh pr create --base main --head update-repo --title "chore: update repo with upstream release ${{ steps.check_upstream_release.outputs.UPSTREAM_RELEASE }}" --body "update repo with the latest upstream release."
