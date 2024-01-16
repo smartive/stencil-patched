@@ -32,7 +32,7 @@ jobs:
         run: |
           git remote add upstream https://github.com/ionic-team/stencil.git
           git fetch upstream
-          git checkout -b update-repo upstream/main
+          git checkout -b update-repo
 
       - name: Create Pull Request
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
@@ -41,9 +41,8 @@ jobs:
           git config user.name 'CI-Robot'
           git config user.email 'mr.robot@smartive.ch'
 
-          # Commit and push changes to your forked repository
-          git add .
-          git commit -m "chore: update repo with upstream release ${{ steps.check_upstream_release.outputs.UPSTREAM_RELEASE }}"
+          # Push changes to your forked repository
+          git merge upstream/${{steps.check_upstream_release.outputs.UPSTREAM_RELEASE}}
           git push origin update-repo
 
           # Create Pull Request
