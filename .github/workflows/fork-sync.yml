@@ -18,14 +18,14 @@ jobs:
         run: |
           FORK_RELEASE=$(git ls-remote --tags https://github.com/smartive/stencil-patched.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           echo "Latest fork release: $FORK_RELEASE"
-          echo "FORK_RELEASE=$FORK_RELEASE" >> $GITHUB_ENV
+          echo "FORK_RELEASE=$FORK_RELEASE" >> $GITHUB_OUTPUT
 
       - name: Check for new release in upstream
         id: check_upstream_release
         run: |
           UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           echo "Latest upstream release: $UPSTREAM_RELEASE"
-          echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_ENV
+          echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
