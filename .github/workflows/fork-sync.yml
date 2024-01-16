@@ -42,7 +42,7 @@ jobs:
           git config user.email 'mr.robot@smartive.ch'
 
           # Push changes to your forked repository
-          git merge upstream/main
+          git merge upstream/main --allow-unrelated-histories
           git push origin update-repo
 
           # Create Pull Request
