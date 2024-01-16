@@ -41,8 +41,8 @@ jobs:
           git config user.name 'CI-Robot'
           git config user.email 'mr.robot@smartive.ch'
 
-          # Set up your branch for changes
-          git checkout -b update-repo
+          # Change branch for changes to commit
+          git checkout update-repo
 
           # Commit and push changes to your forked repository
           git add .
