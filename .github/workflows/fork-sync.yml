@@ -31,7 +31,7 @@ jobs:
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
         run: |
           git remote add upstream https://github.com/ionic-team/stencil.git
-          git fetch upstream
+          git fetch upstream --tags
           git checkout -b update-repo
 
       - name: Create Pull Request
