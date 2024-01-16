@@ -27,6 +27,13 @@ jobs:
           echo "Latest upstream release: $UPSTREAM_RELEASE"
           echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
 
+      - name: Fetch upstream changes
+        if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
+        run: |
+          git remote add upstream https://github.com/ionic-team/stencil.git
+          git fetch upstream
+          git checkout -b update-repo upstream/main
+
       - name: Create Pull Request
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
         run: |
