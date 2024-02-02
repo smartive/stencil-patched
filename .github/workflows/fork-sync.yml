@@ -26,14 +26,7 @@ jobs:
           UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           echo "Latest upstream release: $UPSTREAM_RELEASE"
           echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
-
-      - name: Fetch upstream changes
-        if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
-        run: |
-          git remote add upstream https://github.com/ionic-team/stencil.git
-          git fetch upstream --tags
-          git checkout -b update-repo
-
+          
       - name: Create Pull Request
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
         run: |
@@ -41,7 +34,11 @@ jobs:
           git config user.name 'CI-Robot'
           git config user.email 'mr.robot@smartive.ch'
 
-          # Push changes to your forked repository
-          git checkout -b update-repo
+          # Sync repo with upstream
           gh repo sync
+          
+          # Push changes to your forked repository
+          git tag ${steps.check_upstream_release.outputs.UPSTREAM_RELEASE} -a "Fork release ${steps.check_upstream_release.outputs.UPSTREAM_RELEASE}"
           git push
+          git push --tags
+          
