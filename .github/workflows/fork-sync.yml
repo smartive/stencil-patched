@@ -38,9 +38,12 @@ jobs:
 
           # Sync repo with upstream
           gh repo sync
+
+          # Get latest upstream release tag
+          UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           
           # Push changes to your forked repository
-          git tag ${steps.check_upstream_release.outputs.UPSTREAM_RELEASE} -a "Fork release ${steps.check_upstream_release.outputs.UPSTREAM_RELEASE}"
+          git tag $UPSTREAM_RELEASE -a "Fork release $UPSTREAM_RELEASE"
           git push
           git push --tags
           
