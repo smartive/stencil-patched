@@ -43,7 +43,7 @@ jobs:
           UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
           
           # Push changes to your forked repository
-          git tag $UPSTREAM_RELEASE -a "Fork release $UPSTREAM_RELEASE"
+          git tag -a $UPSTREAM_RELEASE -m "Fork release $UPSTREAM_RELEASE"
           git push
           git push --tags
           
