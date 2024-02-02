@@ -27,7 +27,7 @@ jobs:
           echo "Latest upstream release: $UPSTREAM_RELEASE"
           echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
           
-      - name: Create Pull Request
+      - name: Sync and push tags for fork
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
         env:
           GH_TOKEN: ${{ github.token }}
