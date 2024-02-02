@@ -29,6 +29,8 @@ jobs:
           
       - name: Create Pull Request
         if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           #Set up Git
           git config user.name 'CI-Robot'
