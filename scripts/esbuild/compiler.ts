@@ -4,7 +4,6 @@ import fs from 'fs-extra';
 import { join } from 'path';
 
 import { bundleParse5 } from '../bundles/plugins/parse5-plugin';
-import { writeSizzleBundle } from '../bundles/plugins/sizzle-plugin';
 import { bundleTerser } from '../bundles/plugins/terser-plugin';
 import { bundleTypeScriptSource, tsCacheFilePath } from '../bundles/plugins/typescript-source-plugin';
 import { getBanner } from '../utils/banner';
@@ -17,6 +16,9 @@ export async function buildCompiler(opts: BuildOptions) {
   const srcDir = join(opts.srcDir, 'compiler');
   const compilerFileName = 'stencil.js';
   const compilerDtsName = compilerFileName.replace('.js', '.d.ts');
+
+  // clear out rollup stuff and ensure directory exists
+  await fs.emptyDir(opts.output.compilerDir);
 
   // create public d.ts
   let dts = await fs.readFile(join(inputDir, 'public.d.ts'), 'utf8');
@@ -70,10 +72,6 @@ export async function buildCompiler(opts: BuildOptions) {
   // same for terser
   const [, terserPath] = await bundleTerser(opts);
   alias['terser'] = terserPath;
-
-  // gotta bundle sizzle too
-  const sizzlePath = await writeSizzleBundle(opts);
-  alias['sizzle'] = sizzlePath;
 
   // and parse5
   const [, parse5path] = await bundleParse5(opts);

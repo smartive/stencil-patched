@@ -11,7 +11,6 @@ import {
   mapJSDocTagInfo,
   retrieveTsDecorators,
   retrieveTsModifiers,
-  serializeSymbol,
   typeToString,
   validateReferences,
 } from '../transform-utils';
@@ -25,11 +24,14 @@ export const methodDecoratorsToStatic = (
   typeChecker: ts.TypeChecker,
   program: ts.Program,
   newMembers: ts.ClassElement[],
+  decoratorName: string,
 ) => {
   const tsSourceFile = cmpNode.getSourceFile();
   const methods = decoratedProps
     .filter(ts.isMethodDeclaration)
-    .map((method) => parseMethodDecorator(config, diagnostics, tsSourceFile, typeChecker, program, method))
+    .map((method) =>
+      parseMethodDecorator(config, diagnostics, tsSourceFile, typeChecker, program, method, decoratorName),
+    )
     .filter((method) => !!method);
 
   if (methods.length > 0) {
@@ -44,8 +46,9 @@ const parseMethodDecorator = (
   typeChecker: ts.TypeChecker,
   program: ts.Program,
   method: ts.MethodDeclaration,
+  decoratorName: string,
 ): ts.PropertyAssignment | null => {
-  const methodDecorator = retrieveTsDecorators(method)?.find(isDecoratorNamed('Method'));
+  const methodDecorator = retrieveTsDecorators(method)?.find(isDecoratorNamed(decoratorName));
   if (methodDecorator == null) {
     return null;
   }
@@ -92,7 +95,11 @@ const parseMethodDecorator = (
   const methodMeta: d.ComponentCompilerStaticMethod = {
     complexType: {
       signature: signatureString,
-      parameters: signature.parameters.map((symbol) => serializeSymbol(typeChecker, symbol)),
+      parameters: signature.parameters.map((symbol) => ({
+        name: symbol.getName(),
+        type: typeToString(typeChecker, typeChecker.getTypeOfSymbolAtLocation(symbol, method)),
+        docs: ts.displayPartsToString(symbol.getDocumentationComment(typeChecker)),
+      })),
       references: {
         ...getAttributeTypeInfo(returnTypeNode, tsSourceFile, typeChecker, program),
         ...getAttributeTypeInfo(method, tsSourceFile, typeChecker, program),

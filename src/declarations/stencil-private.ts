@@ -1,7 +1,7 @@
 import { result } from '@utils';
-import type { Serializable as CPSerializable } from 'child_process';
 
 import type { InMemoryFileSystem } from '../compiler/sys/in-memory-fs';
+import type { CPSerializable } from './child_process';
 import type {
   BuildEvents,
   BuildLog,
@@ -28,6 +28,7 @@ import type {
   TaskCommand,
   ValidatedConfig,
 } from './stencil-public-compiler';
+import type { JsonDocMethodParameter } from './stencil-public-docs';
 import type { ComponentInterface, ListenTargetOptions, VNode } from './stencil-public-runtime';
 
 export interface SourceMap {
@@ -43,7 +44,7 @@ export interface SourceMap {
 export interface PrintLine {
   lineIndex: number;
   lineNumber: number;
-  text?: string;
+  text: string;
   errorCharStart: number;
   errorLength?: number;
 }
@@ -189,6 +190,8 @@ export interface BuildConditionals extends Partial<BuildFeatures> {
 
   // TODO(STENCIL-914): remove this option when `experimentalSlotFixes` is the default behavior
   experimentalSlotFixes?: boolean;
+  // TODO(STENCIL-1086): remove this option when it's the default behavior
+  experimentalScopedSlotChanges?: boolean;
 }
 
 export type ModuleFormat =
@@ -610,21 +613,21 @@ export interface ComponentCompilerMeta extends ComponentCompilerFeatures {
    * - directly referenced in a Stencil component's JSX/h() function
    * - are referenced by a web component that is directly referenced in a Stencil component's JSX/h() function
    */
-  dependencies?: string[];
+  dependencies: string[];
   /**
    * A list of web component tag names that either:
    * - directly reference the current component directly in their JSX/h() function
    * - indirectly/transitively reference the current component directly in their JSX/h() function
    */
-  dependents?: string[];
+  dependents: string[];
   /**
    * A list of web component tag names that are directly referenced in a Stencil component's JSX/h() function
    */
-  directDependencies?: string[];
+  directDependencies: string[];
   /**
    * A list of web component tag names that the current component directly in their JSX/h() function
    */
-  directDependents?: string[];
+  directDependents: string[];
   docs: CompilerJsDoc;
   elementRef: string;
   encapsulation: Encapsulation;
@@ -799,7 +802,7 @@ export interface ComponentCompilerStaticMethod {
 
 export interface ComponentCompilerMethodComplexType {
   signature: string;
-  parameters: CompilerJsDoc[];
+  parameters: JsonDocMethodParameter[];
   references: ComponentCompilerTypeReferences;
   return: string;
 }
@@ -1329,6 +1332,14 @@ export interface RenderNode extends HostElement {
   host?: Element;
 
   /**
+   * Is initially hidden
+   * Whether this node was originally rendered with the `hidden` attribute.
+   *
+   * Used to reset the `hidden` state of a node during slot relocation.
+   */
+  ['s-ih']?: boolean;
+
+  /**
    * Is Content Reference Node:
    * This node is a content reference node.
    */
@@ -1365,24 +1376,6 @@ export interface RenderNode extends HostElement {
    * This value is set to `undefined` whenever the node is put back into its original location.
    */
   ['s-sh']?: string;
-
-  /**
-   * Slot forward slot:
-   * This is the slot that the original `slot` tag element was going to be
-   * forwarded to in another element. For instance:
-   *
-   * ```html
-   * <my-cmp>
-   *  <slot name="my-slot" slot="another-slot"></slot>
-   * </my-cmp>
-   * ```
-   *
-   * In this case, the value would be `another-slot`.
-   *
-   * This allows us to correctly set the `slot` attribute on an element when it is moved
-   * from a non-shadow to shadow element.
-   */
-  ['s-fs']?: string;
 
   /**
    * Original Location Reference:
@@ -2419,11 +2412,11 @@ export type MsgFromWorker<T extends WorkerContextMethod> = IPCSerializable<{
  * completes.
  */
 export interface CompilerWorkerTask {
-  stencilId?: number;
-  inputArgs?: any[];
+  stencilId: number;
+  inputArgs: any[];
   resolve: (val: any) => any;
   reject: (msg: string) => any;
-  retries?: number;
+  retries: number;
 }
 
 /**
