@@ -17,7 +17,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         ref: main
 
-    - name: Setup git
+    - name: Setup git‡
       run: |
         git config --global user.name 'CI-Robot'
         git config --global user.email 'mr.robot@smartive.ch'
@@ -28,20 +28,33 @@ jobs:
     - name: Fetch original repository tags
       run: git fetch upstream --tags
 
-    - name: Get latest tag
+    - name: Get latest tag from original repo
       id: get_latest_tag
-      run: echo "::set-output name=tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+      run: echo "::set-output name=latest_tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+
+    - name: Check if latest tag is already present in forked repo
+      id: check_tag
+      run: |
+        if git rev-parse refs/tags/${{ steps.get_latest_tag.outputs.latest_tag }} >/dev/null 2>&1; then
+          echo "Tag ${{ steps.get_latest_tag.outputs.latest_tag }} already exists in forked repo."
+          echo "::set-output name=tag_exists::true"
+        else
+          echo "Tag ${{ steps.get_latest_tag.outputs.latest_tag }} does not exist in forked repo."
+          echo "::set-output name=tag_exists::false"
+        fi
 
     - name: Checkout and merge latest tag from original repo
+      if: steps.check_tag.outputs.tag_exists == 'false'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        git checkout ${{ steps.get_latest_tag.outputs.tag }}
+        git checkout ${{ steps.get_latest_tag.outputs.latest_tag }}
         git checkout -B main
         git pull upstream main
         git push origin main
 
     - name: Check and update package.json name field if needed
+      if: steps.check_tag.outputs.tag_exists == 'false'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
@@ -56,16 +69,18 @@ jobs:
         fi
 
     - name: Create new tag in forked repository
+      if: steps.check_tag.outputs.tag_exists == 'false'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        git tag ${{ steps.get_latest_tag.outputs.tag }}
+        git tag ${{ steps.get_latest_tag.outputs.latest_tag }}
         git push origin --tags
 
     - name: Publish to npm
+      if: steps.check_tag.outputs.tag_exists == 'false'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
         npm install
-        npm version ${{ steps.get_latest_tag.outputs.tag }}
+        npm version ${{ steps.get_latest_tag.outputs.latest_tag }}
         npm publish
