@@ -1,49 +1,71 @@
-name: Keep Fork Up-to-date
+name: Sync with Original Repo
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-    # scheduled once a day at midnight
+    - cron: '0 0 * * *' # runs once a day at midnight
   workflow_dispatch: # click the button on Github repo!
 
 jobs:
-  sync:
+  sync-and-publish:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout forked repository
+      uses: actions/checkout@v2
+      with:
+        repository: smartive/stencil-patched
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
 
-      - name: Check for new release in fork
-        id: check_fork_release
-        run: |
-          FORK_RELEASE=$(git ls-remote --tags https://github.com/smartive/stencil-patched.git | cut -d '/' -f 3 | sort -V | tail -n 1)
-          echo "Latest fork release: $FORK_RELEASE"
-          echo "FORK_RELEASE=$FORK_RELEASE" >> $GITHUB_OUTPUT
+    - name: Setup git
+      run: |
+        git config --global user.name 'CI-Robot'
+        git config --global user.email 'mr.robot@smartive.ch'
+        
+    - name: Add original repository as remote
+      run: git remote add upstream https://github.com/ionic-team/stencil.git
 
-      - name: Check for new release in upstream
-        id: check_upstream_release
-        run: |
-          UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
-          echo "Latest upstream release: $UPSTREAM_RELEASE"
-          echo "UPSTREAM_RELEASE=$UPSTREAM_RELEASE" >> $GITHUB_OUTPUT
-          
-      - name: Sync and push tags for fork
-        if: steps.check_fork_release.outputs.FORK_RELEASE != steps.check_upstream_release.outputs.UPSTREAM_RELEASE
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          #Set up Git
-          git config user.name 'CI-Robot'
-          git config user.email 'mr.robot@smartive.ch'
+    - name: Fetch original repository tags
+      run: git fetch upstream --tags
 
-          # Sync repo with upstream
-          gh repo sync
+    - name: Get latest tag
+      id: get_latest_tag
+      run: echo "::set-output name=tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
 
-          # Get latest upstream release tag
-          UPSTREAM_RELEASE=$(git ls-remote --tags https://github.com/ionic-team/stencil.git | cut -d '/' -f 3 | sort -V | tail -n 1)
-          
-          # Push changes to your forked repository
-          git tag -a $UPSTREAM_RELEASE -m "Fork release $UPSTREAM_RELEASE"
-          git push
-          git push --tags
-          
+    - name: Checkout and merge latest tag from original repo
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        git checkout ${{ steps.get_latest_tag.outputs.tag }}
+        git checkout -B main
+        git pull upstream main
+        git push origin main
+
+    - name: Check and update package.json name field if needed
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        CURRENT_NAME=$(jq -r .name package.json)
+        if [ "$CURRENT_NAME" = "@stencil/core" ]; then
+          jq '.name = "@smartive/stencil-core"' package.json > tmp.json && mv tmp.json package.json
+          git add package.json
+          git commit -m "Update package name to @smartive/stencil-core"
+          git push origin main
+        else
+          echo "Package name is already updated."
+        fi
+
+    - name: Create new tag in forked repository
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        git tag ${{ steps.get_latest_tag.outputs.tag }}
+        git push origin --tags
+
+    - name: Publish to npm
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        npm install
+        npm version ${{ steps.get_latest_tag.outputs.tag }}
+        npm publish
