@@ -34,7 +34,7 @@ jobs:
       run: git remote add upstream https://github.com/ionic-team/stencil.git
       
     - name: Fetch original repository tags
-      run: git fetch upstream --tags || echo ""
+      run: git fetch upstream --tags || exit 0
       
     - name: Get latest tag from original repo
       id: get_latest_tag
