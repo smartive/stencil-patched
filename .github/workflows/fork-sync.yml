@@ -1,0 +1,87 @@
+name: Sync with Original Repo
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # runs once a day at midnight
+  workflow_dispatch: # click the button on Github repo!
+
+jobs:
+  sync-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout forked repository
+      uses: actions/checkout@v2
+      with:
+        repository: smartive/stencil-patched
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: main
+
+    - name: Setup git‡
+      run: |
+        git config --global user.name 'CI-Robot'
+        git config --global user.email 'mr.robot@smartive.ch'
+        git config --global pull.rebase true
+
+    - name: Fetch forked repository tags
+      run: git fetch origin --tags
+
+    - name: Get latest tag from forked repo
+      id: get_latest_tag_origin
+      run: echo "::set-output name=latest_tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+        
+    - name: Add original repository as remote
+      run: git remote add upstream https://github.com/ionic-team/stencil.git
+      
+    - name: Fetch original repository tags
+      run: git fetch upstream --tags
+      
+    - name: Get latest tag from original repo
+      id: get_latest_tag
+      run: echo "::set-output name=latest_tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+
+    - name: Checkout and merge latest tag from original repo
+      if: steps.get_latest_tag_origin.outputs.latest_tag != steps.get_latest_tag.outputs.latest_tag
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config branch.main.remote origin
+        git config branch.main.merge refs/heads/main
+        git config pull.rebase true
+        git pull origin main
+        git pull upstream main
+        git push origin main --force-with-lease
+
+    - name: Check and update package.json name field if needed
+      if: steps.get_latest_tag_origin.outputs.latest_tag != steps.get_latest_tag.outputs.latest_tag
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        CURRENT_NAME=$(jq -r .name package.json)
+        if [ "$CURRENT_NAME" = "@stencil/core" ]; then
+          jq '.name = "@smartive/stencil-core"' package.json > tmp.json && mv tmp.json package.json
+          git add package.json
+          git commit -m "Update package name to @smartive/stencil-core"
+          git push origin main
+        else
+          echo "Package name is already updated."
+        fi
+
+    - name: Create new tag in forked repository
+      if: steps.get_latest_tag_origin.outputs.latest_tag != steps.get_latest_tag.outputs.latest_tag
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git tag -f ${{ steps.get_latest_tag.outputs.latest_tag }}
+        git push origin --tags
+
+    - name: Publish to npm
+      if: steps.get_latest_tag_origin.outputs.latest_tag != steps.get_latest_tag.outputs.latest_tag
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        npm ci
+        npm run install.jest
+        npm run build
+        npm version ${{ steps.get_latest_tag.outputs.latest_tag }}
+        npm publish
