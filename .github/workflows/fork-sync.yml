@@ -83,5 +83,4 @@ jobs:
         npm ci
         npm run install.jest
         npm run build
-        npm version ${{ steps.get_latest_tag.outputs.latest_tag }}
-        npm publish
+        npm publish --access public
