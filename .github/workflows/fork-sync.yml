@@ -25,12 +25,12 @@ jobs:
     - name: Add original repository as remote
       run: git remote add upstream https://github.com/ionic-team/stencil.git
 
-    - name: Fetch original repository tags
-      run: git fetch upstream --tags
-
     - name: Get latest tag from original repo
       id: get_latest_tag
       run: echo "::set-output name=latest_tag::$(git describe --tags $(git rev-list --tags --max-count=1))"
+      
+    - name: Fetch original repository tags
+      run: git fetch upstream --tags
 
     - name: Check if latest tag is already present in forked repo
       id: check_tag
