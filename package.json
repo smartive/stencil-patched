@@ -1,5 +1,5 @@
 {
-  "name": "@stencil/core",
+  "name": "@smartive/stencil-core",
   "version": "4.20.0",
   "license": "MIT",
   "main": "./internal/stencil-core/index.cjs",
