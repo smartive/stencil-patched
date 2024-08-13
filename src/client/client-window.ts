@@ -2,7 +2,7 @@ import { BUILD } from '@app-data';
 
 import type * as d from '../declarations';
 
-export const win = typeof window !== 'undefined' ? window : ({} as Window);
+export const win = typeof window !== 'undefined' ? window : ((globalThis || {}) as Window);
 
 export const doc = win.document || ({ head: {} } as Document);
 
@@ -28,11 +28,7 @@ export const setPlatformHelpers = (helpers: {
   Object.assign(plt, helpers);
 };
 
-export const supportsShadow =
-  // TODO(STENCIL-854): Remove code related to legacy shadowDomShim field
-  BUILD.shadowDomShim && BUILD.shadowDom
-    ? /*@__PURE__*/ (() => (doc.head.attachShadow + '').indexOf('[native') > -1)()
-    : true;
+export const supportsShadow = BUILD.shadowDom;
 
 export const supportsListenerOptions = /*@__PURE__*/ (() => {
   let supportsListenerOptions = false;
